@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.example.ProductDao;
+import com.example.dao.ProductDao;
 import com.example.entities.Product;
 
 import lombok.RequiredArgsConstructor;

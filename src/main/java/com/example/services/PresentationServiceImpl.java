@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.example.PresentationDao;
+import com.example.dao.PresentationDao;
 import com.example.entities.Presentation;
 
 import lombok.RequiredArgsConstructor;
