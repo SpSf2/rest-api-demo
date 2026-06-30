@@ -23,7 +23,7 @@ const persona = {
     apellidos: "Machado Arteaga",
     edad: 62,
     libros: [
-        {autor: "Pepito", titulo: "Habia una vez"},
+        {autor: "autor: Pepito", titulo: "Habia una vez"},
         {autor: "Margatita", titulo: "La vida es bella"}
     ]
 };
@@ -45,3 +45,5 @@ const persona2 = JSON.parse(personaJSON);
 
 console.log(persona2.nombre);
 console.log(persona2.apellidos); 
+console.log(persona2.edad);
+console.log(persona2.libros[0].autor);
