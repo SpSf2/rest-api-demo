@@ -1,5 +1,7 @@
 package com.example.controllers;
 
+import com.example.CreateSamplesData;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,9 +22,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.entities.Product;
 import com.example.services.ProductService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 
 /*/**
@@ -44,6 +51,7 @@ devuelvan o reciban datos en formato de JSON (JavaScript Object Notation)
 @RequiredArgsConstructor
 public class ProductController {
 
+    private final CreateSamplesData createSamplesData;
     private final ProductService productService;
 
      /**
@@ -101,7 +109,7 @@ public class ProductController {
         }
 
 
-        /**El Método siguiente recupra un producto por id que se recibe como una variable en
+        /**El Método siguiente recupera un producto por id que se recibe como una variable en
          * la ruta, mediante un endpoint (url o uri) que tiene el fotmato:
          * 
          * http://localhost:8080/products/{id}
@@ -146,5 +154,53 @@ public class ProductController {
         }
 
 
+        //Metodo que recibe por el Post el Producto para ser persistido, y que valida el JSON
+        //recibido para comprobar si esta bien formado o no:
+
+        @PostMapping
+        public ResponseEntity<Map<String, Object>> saveProduct(@Valid
+                            @RequestBody Product product,
+                            BindingResult result) {
+            
+            List<String> mensajesDeError = new ArrayList<>();
+            Map<String, Object> responseAsMap = new HashMap<>();
+            ResponseEntity<Map<String, Object>> responseEntity = null;
+            
+            /**Primero comprobar si hay errores en el producto recibido:  */
+            if (result.hasErrors()) {
+                //Recuperamos los errores que tiene el producto recibido y se lo informamos
+                //al que realizó la petición (request) de persistir el producto: 
+                List<ObjectError> objectErrors =result.getAllErrors();
+
+                objectErrors.stream().forEach(objetcError ->
+                    mensajesDeError.add(objetcError.getDefaultMessage()));
+                responseAsMap.put("El Producto tiene los siguientes errores: ", 
+                                 mensajesDeError);
+                responseAsMap.put("Producto mal formado", product);
+
+                responseEntity = new ResponseEntity<Map<String, Object>>(
+                                                responseAsMap, HttpStatus.BAD_REQUEST);
+
+                return responseEntity;
+            }
+                /**Persistimos el producto porque si hemos llegado a este punto, es que está
+                 * bien formado
+                 */
+                try {
+                    Product productoPersistido = productService.save(product);
+                    responseAsMap.put("mensaje", "Producto Persistido exitosamente");
+                    responseAsMap.put("producto", productoPersistido);
+                    responseEntity = new ResponseEntity<Map<String, Object>>(
+                                                responseAsMap, HttpStatus.CREATED);
+                } catch (DataAccessException e) {
+                    responseAsMap.put("mensaje", "Error al persistir el producto y" +
+                    "la causa más probable es: " + 
+                                            e.getMostSpecificCause().getMessage());
+                    responseEntity = new ResponseEntity<Map<String, Object>>(
+                                                responseAsMap, HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+
+            return responseEntity;      
+        }
 
 }
