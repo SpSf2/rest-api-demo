@@ -7,7 +7,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.text.RandomStringGenerator;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,7 +19,7 @@ public class FileUploadUtil {
 
         // Definimos la ruta donde se va a guardar el archivo recibido, es decir, la
         // imagen
-        Path uploadPath = Paths.get("Files-upload");
+        Path uploadPath = Paths.get("Files-Upload");
         // Comprobamos si existe esta ruta, que será una carpeta (folder), o de lo
         // contrario la creamos
         if (!Files.exists(uploadPath))

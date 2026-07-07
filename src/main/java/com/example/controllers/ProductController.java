@@ -34,7 +34,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 
 /*/**
@@ -167,7 +166,7 @@ public class ProductController {
         * parte la ocupa la imagen del producto
         * 
         * Y, muy importante, que no se nos olvide anotar este metodo y todos los que insertan, crean,
-        * eliminan registros en las tablas con la anotacion @Transactional,
+        * y eliminan registros en las tablas con la anotacion @Transactional,
         * y tambien hay que especificar el tipo de archivo que va a consumir este metodo 
         * @throws IOException */
         //Metodo que recibe por el Post el Producto para ser persistido, y que valida el JSON
@@ -177,7 +176,8 @@ public class ProductController {
         @Transactional
         public ResponseEntity<Map<String, Object>> saveProduct(@Valid
                             @RequestPart Product product,
-                            BindingResult result, @RequestPart(name = "file", required = false) MultipartFile imagenDelProducto) throws IOException {
+                            BindingResult result, @RequestPart(name = "file", required = false)
+                            MultipartFile imagenDelProducto) throws IOException {
             
             List<String> mensajesDeError = new ArrayList<>();
             Map<String, Object> responseAsMap = new HashMap<>();
@@ -206,19 +206,19 @@ public class ProductController {
                     /**
              * Para guardar la imagen del producto en primer lugar le agregaremos como prefijo un codigo
              * alfanumerico (de letras y numero), generado aleatoriamente a partir de un metodo que se 
-             * encuentra en la biblioteca Apache Commods text 1.15, que hay que descargar la dependencia desde
+             * encuentra en la biblioteca Apache Commons text 1.15, que hay que descargar la dependencia desde
              * el repositorio central de maven y agregarla al pom.xml 
              */
             /**Vamos a crear un componente en un paquete que podría ser com.example.utilities, y
-             * este componente va a tener un metdod para guradar la imagen recibida en una carpetadel file
+             * este componente va a tener un metodo para guardar la imagen recibida en una carpeta del file
              * system y devolver un código alfanumerico generado aleatoriamente que llevará como prefijo el
              * nombre del fichero de imagen recibido.
              * Se hará uso intensivo de Nio.2 y se comprobara si la carpeta existe o no para crearla.
              */
                     String fileCode = fileUploadUtil.saveFile(imagenDelProducto.getOriginalFilename(), imagenDelProducto);
-                    product.setProductImage(fileCode + imagenDelProducto.getOriginalFilename());
+                    product.setProductImage(fileCode + '-' + imagenDelProducto.getOriginalFilename());
 
-                    /**Como es una ApiRest hay que devolver información al que ha realixado la rquest respecto
+                    /**Como es una ApiRest hay que devolver información al que ha realizado la request respecto
                      * a la imagen subida, para lo cual vamos a crear en un paquete llamado com.example.models
                      * un Record, donde devolveremos la información de la imagen
                      */
@@ -227,7 +227,7 @@ public class ProductController {
                         "/products/fileDownload",
                         imagenDelProducto.getSize());
 
-                    responseAsMap.put("fileUploadResponse", fileUploadResponse);
+                    responseAsMap.put("Información de la imagen del Producto:", fileUploadResponse);
 
 
 
