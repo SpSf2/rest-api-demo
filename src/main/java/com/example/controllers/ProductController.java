@@ -31,6 +31,7 @@ import com.example.models.FileUploadResponse;
 import com.example.services.ProductService;
 import com.example.utilities.FileDownloadUtil;
 import com.example.utilities.FileUploadUtil;
+import com.example.utilities.FileUtil;
 
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -38,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 
 
 /*/**
@@ -65,6 +67,7 @@ public class ProductController {
     private final ProductService productService;
     private final FileUploadUtil fileUploadUtil;
     private final FileDownloadUtil fileDownloadUtil;
+    private final FileUtil fileUtil;
 
      /**
      * 
@@ -293,4 +296,116 @@ public class ProductController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, headerValue)
                 .body(resource);
                         }
+
+
+        /*Metodo que actualiza un producto cuyo id se recibe en la petición conjuntamente
+        con el Json del producto y la imagen del producto, queno es requerida
+        
+        El método es practicamente igual al metodo que persiste a un producto con la
+         imagen recibida, con lo cual, podemos copiar y pegar el contenido del metodo
+         saveProduct
+         */               
+        @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+        @Transactional
+        public ResponseEntity<Map<String, Object>> updateProduct(@Valid
+                            @RequestPart Product product,
+                            BindingResult result, @RequestPart(name = "file", required = false)
+                            MultipartFile imagenDelProducto, 
+                            @PathVariable("id") int product_id) throws IOException {
+            
+            List<String> mensajesDeError = new ArrayList<>();
+            Map<String, Object> responseAsMap = new HashMap<>();
+            ResponseEntity<Map<String, Object>> responseEntity = null;
+            
+            /**Primero comprobar si hay errores en el producto recibido:  */
+            if (result.hasErrors()) {
+                //Recuperamos los errores que tiene el producto recibido y se lo informamos
+                //al que realizó la petición (request) de persistir el producto: 
+                List<ObjectError> objectErrors =result.getAllErrors();
+
+                objectErrors.stream().forEach(objetcError ->
+                    mensajesDeError.add(objetcError.getDefaultMessage()));
+                responseAsMap.put("El Producto tiene los siguientes errores: ", 
+                                 mensajesDeError);
+                responseAsMap.put("Producto mal formado", product);
+
+                responseEntity = new ResponseEntity<Map<String, Object>>(
+                                                responseAsMap, HttpStatus.BAD_REQUEST);
+
+                return responseEntity;
+            }
+                //Actualizamos el producto pero Antes vamos a comprobar si hemos recibido
+                // imagen del producto  para guardarla
+                //actualizarla, en cuyo caso debemos, primero, eliminar la imagen asociada al producto
+                //guardado en el sistema de  archivos (file system)
+
+                //Recuperando el producto cuyo id hemos recibido como parte de la petición:
+                Product productoGuardado = productService.findById(product_id);
+
+                if (productoGuardado == null) {
+                    responseAsMap.put("mensaje de error: ", "producto con id " + product_id + " no encontrado");
+                    return new ResponseEntity<Map<String, Object>>(responseAsMap, HttpStatus.NOT_FOUND);
+                }
+
+                if (imagenDelProducto != null && !imagenDelProducto.isEmpty()) {
+                    /*Comprobar si el producto guardado tiene imagen y eliminarla */
+                    if (productoGuardado.getProductImage() != null) {
+                        /*Eliminar la imagen asociada al Producto guardado para lo cual vamos a necesitar
+                        de un metodo en un componente que reciba el nombre del fichero de imagen y
+                         y lo busque en la carpeta a donde hemos subido las imagenes, y lo elimine*/
+                        fileUtil.eliminarArchivo(productoGuardado.getProductImage());
+                    
+                    }
+
+                    /**
+             * Para guardar la imagen del producto en primer lugar le agregaremos como prefijo un codigo
+             * alfanumerico (de letras y numero), generado aleatoriamente a partir de un metodo que se 
+             * encuentra en la biblioteca Apache Commons text 1.15, que hay que descargar la dependencia desde
+             * el repositorio central de maven y agregarla al pom.xml 
+             */
+            /**Vamos a crear un componente en un paquete que podría ser com.example.utilities, y
+             * este componente va a tener un metodo para guardar la imagen recibida en una carpeta del file
+             * system y devolver un código alfanumerico generado aleatoriamente que llevará como prefijo el
+             * nombre del fichero de imagen recibido.
+             * Se hará uso intensivo de Nio.2 y se comprobara si la carpeta existe o no para crearla.
+             */
+                    String fileCode = fileUploadUtil.saveFile(imagenDelProducto.getOriginalFilename(), imagenDelProducto);
+                    product.setProductImage(fileCode + "-" + imagenDelProducto.getOriginalFilename());
+
+                    /**Como es una ApiRest hay que devolver información al que ha realizado la request respecto
+                     * a la imagen subida, para lo cual vamos a crear en un paquete llamado com.example.models
+                     * un Record, donde devolveremos la información de la imagen
+                     */
+                    FileUploadResponse fileUploadResponse = new FileUploadResponse
+                        (fileCode + '-' + imagenDelProducto.getOriginalFilename(),
+                        "/products/fileDownload",
+                        imagenDelProducto.getSize());
+
+                    responseAsMap.put("Información de la imagen del Producto:", fileUploadResponse);
+
+
+
+                }
+
+                /**Persistimos el producto porque si hemos llegado a este punto, es que está
+                 * bien formado
+                 */
+                try {
+                    product.setId(product_id);
+                    Product productoPersistido = productService.save(product);
+                    responseAsMap.put("mensaje", "Producto Actualizado exitosamente");
+                    responseAsMap.put("producto Actualizado", productoPersistido);
+                    responseEntity = new ResponseEntity<Map<String, Object>>(
+                                                responseAsMap, HttpStatus.CREATED);
+                } catch (DataAccessException e) {
+                    responseAsMap.put("mensaje", "Error al actualizar el producto y" +
+                    "la causa más probable es: " + 
+                                            e.getMostSpecificCause().getMessage());
+                    responseEntity = new ResponseEntity<Map<String, Object>>(
+                                                responseAsMap, HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+
+            return responseEntity;      
+        }
+
 }
