@@ -104,7 +104,8 @@ public class ProductController {
 
             List<Product> products = null;
             Map<String, Object> responseAsMap = new HashMap<>();
-            Sort sort = Sort.by("name");                        
+            String nombre = "name";
+            Sort sort = Sort.by(nombre);                        
 
             /*Comprobar si en la peticion (request) me han suministardo los parametros page y size */
             if (page != null && size != null) {
@@ -407,5 +408,7 @@ public class ProductController {
 
             return responseEntity;      
         }
+
+        
 
 }
