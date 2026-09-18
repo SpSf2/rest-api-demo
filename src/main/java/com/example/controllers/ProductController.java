@@ -109,7 +109,7 @@ public class ProductController {
             String nombre = "name";
             Sort sort = Sort.by(nombre);                        
 
-            /*Comprobar si en la peticion (request) me han suministardo los parametros page y size */
+            /*Comprobar si en la peticion (request) me han suministrado los parametros page y size */
             if (page != null && size != null) {
 
                 Pageable pageable = PageRequest.of(page, size, sort);
@@ -441,13 +441,13 @@ public class ProductController {
                     responseAsMap.put("mensaje", notFoundMessage);
                     responseEntity = new ResponseEntity<Map<String, Object>>(responseAsMap, HttpStatus.NOT_FOUND);
             }
-            } catch (DataAccessException e) {
-            String errorMessage = "No ha podido ser eliminado el producto cuyo id es: " + id
-            + ", siendo la causa mas probable: " + e.getMostSpecificCause().getMessage();
-            responseAsMap.put("mensaje", errorMessage);
-            responseEntity = new ResponseEntity<Map<String, Object>>(responseAsMap,
-            HttpStatus.INTERNAL_SERVER_ERROR);
-            }
+        } catch (DataAccessException e) {
+        String errorMessage = "No ha podido ser eliminado el producto cuyo id es: " + id
+        + ", siendo la causa mas probable: " + e.getMostSpecificCause().getMessage();
+        responseAsMap.put("mensaje", errorMessage);
+        responseEntity = new ResponseEntity<Map<String, Object>>(responseAsMap,
+        HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
             return responseEntity;
         }
