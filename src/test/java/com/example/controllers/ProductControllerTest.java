@@ -141,7 +141,7 @@ public class ProductControllerTest {
             /*  response.andDo(print())
                       .andExpect(status().isCreated())
                       .andExpect(jsonPath("$.producto.name", is(product.getName()))); */
-                      
+
 /*Lo que se comentó fue para demostrar una forma de hacer un test con el resultado de la petición
 en una variable (response) */
 
@@ -149,10 +149,34 @@ en una variable (response) */
                 // TODO Auto-generated catch block
                 e.printStackTrace();
         }
+    }
 
-        
+    @Test 
+    @DisplayName("Controller Test: Test para recuperar un producto por id")
+    void RecuperarProductoPorId() throws Exception {
 
+        int productId = 1;
 
+        // given
+        given(productService.findById(productId)).willReturn(product);
+
+        // when & then
+        mockMvc.perform(get("/products/{id}", productId))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$['producto encontrado'].name", is(product.getName())));
     }
   
+    @Test
+    @DisplayName ("Controller Test: Test para Producto no encontrado")
+    void ProductoNoEncontrado() throws Exception {
+
+        // given
+        given(productService.findById(100)).willReturn(null);
+
+        // when & then
+        mockMvc.perform(get("/products/{id}", 100))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
 }
