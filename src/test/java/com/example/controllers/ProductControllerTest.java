@@ -1,8 +1,9 @@
 package com.example.controllers;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -29,6 +31,7 @@ import com.example.utilities.FileDownloadUtil;
 import com.example.utilities.FileUploadUtil;
 import com.example.utilities.FileUtil;
 import com.example.CreateSamplesData; // Ajusta el paquete exacto si es necesario
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper; // Import corregido
 
 @WebMvcTest(controllers = ProductController.class)
@@ -61,12 +64,12 @@ public class ProductControllerTest {
     @BeforeEach
     void setUp() {
 
-         Presentation presentation = Presentation.builder()
+         presentation = Presentation.builder()
                 .name("Decenas")
                 .description("Por Decenas")
                 .build();
 
-        Product product = Product.builder()
+         product = Product.builder()
                 .name("Cámara")
                 .description("Cámara HP 65-12 Megapixeles")
                 .price(new BigDecimal("400.99"))           
@@ -75,12 +78,12 @@ public class ProductControllerTest {
                 .presentation(presentation)
                 .build();
 
-        Presentation presentation2 = Presentation.builder()
+         presentation2 = Presentation.builder()
                 .name("Unidades")
                 .description("Por Unidades")
                 .build();
 
-        Product product2 = Product.builder()
+         product2 = Product.builder()
                 .name("Frigorifico")
                 .description("General Electric")
                 .price(new BigDecimal("1100.99"))           
@@ -113,7 +116,41 @@ public class ProductControllerTest {
 
     @Test
     @DisplayName("Controller Test: Test para Persistir un producto")
-    void testSavedProducts(){
+    void testSavedProducts() throws JsonProcessingException {
+
+        // given
+        given(productService.save(any(Product.class)))
+                             .willAnswer(invocation -> invocation.getArgument(0));
+        //when
+        String jsonStringProduct = objectMapper.writeValueAsString(product);
+
+        MockMultipartFile bytesArrayProduct = new MockMultipartFile("product", 
+                                                             null, 
+                                                             "application/json",
+                                                             jsonStringProduct.getBytes());
+        
+        try {
+       /* ResultActions response = */       mockMvc.perform(multipart("/products")
+                                                                .file(bytesArrayProduct)
+                                                                .file("file", null))
+                                                                .andDo(print())
+                                                                .andExpect(status().isCreated())
+                                                                .andExpect(jsonPath("$.producto.name"
+                                                                , is(product.getName())));;
+        //then                                                  
+            /*  response.andDo(print())
+                      .andExpect(status().isCreated())
+                      .andExpect(jsonPath("$.producto.name", is(product.getName()))); */
+                      
+/*Lo que se comentó fue para demostrar una forma de hacer un test con el resultado de la petición
+en una variable (response) */
+
+        } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+        }
+
+        
 
 
     }
